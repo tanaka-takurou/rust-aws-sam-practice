@@ -1,5 +1,5 @@
-# Rust Cloudformation Examples
-Sample AWS Cloudformation with rust code.
+# Rust AWS SAM Practice
+Practices of AWS SAM with rust code.
 
 
 ## Dependencies
