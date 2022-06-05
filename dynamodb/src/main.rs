@@ -1,4 +1,5 @@
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
+use aws_sdk_dynamodb::{Client};
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -6,13 +7,17 @@ use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
 /// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/lambda-http/examples
 async fn function_handler(_event: Request) -> Result<impl IntoResponse, Error> {
     // Extract some useful information from the request
+    let shared_config = aws_config::load_from_env().await;
+    let client = Client::new(&shared_config);
+    let req = client.list_tables().limit(10);
+    let resp = req.send().await?;
 
     // Return something that implements IntoResponse.
     // It will be serialized to the right response event automatically by the runtime
     let resp = Response::builder()
         .status(200)
         .header("content-type", "text/html")
-        .body("Hello AWS Lambda HTTP request. Minimal function.")
+        .body(format!("Hello AWS Lambda HTTP request. Current DynamoDB tables: {:?}", resp.table_names))
         .map_err(Box::new)?;
     Ok(resp)
 }
