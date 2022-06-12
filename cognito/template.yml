@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Cognito Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'CognitoPage'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: CognitoPageApi
+      EndpointConfiguration: REGIONAL
+      StageName: Prod
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CognitoPageFunction
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: target/lambda/cognito/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'Cognito Function'
+      Policies: AmazonCognitoReadOnly
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/'
+            Method: get
+            RestApiId: !Ref FrontPageApi
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join [ '', [ 'https://', !Ref FrontPageApi, '.execute-api.',!Ref 'AWS::Region','.amazonaws.com/','Prod/'] ]
