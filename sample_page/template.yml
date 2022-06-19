@@ -1,0 +1,49 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Sample Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'SamplePage'
+  FrontPageApiStageName:
+    Type: String
+    Default: 'ProdStage'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: SamplePageApi
+      EndpointConfiguration: REGIONAL
+      StageName: !Ref FrontPageApiStageName
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: SamplePageFunction
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: front/target/lambda/sample_page/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'Sample Front Function'
+      Environment:
+        Variables:
+          REGION: !Ref 'AWS::Region'
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/'
+            Method: get
+            RestApiId: !Ref FrontPageApi
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join ['', ['https://', !Ref FrontPageApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref FrontPageApiStageName, '/']]
