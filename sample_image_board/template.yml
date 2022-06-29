@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Sample Image Board Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'SampleImageBoardPage'
+  ImgTableName:
+    Type: String
+    Default: 'sample_image_board'
+    Description: (Required) The name of the new DynamoDB to store connection identifiers for each connected clients. Minimum 3 characters
+    MinLength: 3
+    MaxLength: 50
+    AllowedPattern: ^[A-Za-z_]+$
+    ConstraintDescription: 'Required. Can be characters and underscore only. No numbers or special characters allowed.'
+  FrontPageApiStageName:
+    Type: String
+    Default: 'ProdStage'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: SampleImageBoardPageApi
+      EndpointConfiguration: REGIONAL
+      StageName: !Ref FrontPageApiStageName
+  ImgBucket:
+    Type: AWS::S3::Bucket
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: front/target/lambda/sample_image_board_front/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleImageBoard Front Function'
+      Policies: AmazonDynamoDBReadOnlyAccess
+      Environment:
+        Variables:
+          IMG_TABLE_NAME: !Ref ImgTableName
+          BUCKET_NAME: !Ref 'ImgBucket'
+          REGION: !Ref 'AWS::Region'
+          API_PATH: !Join ['', ['/', !Ref FrontPageApiStageName, '/api']]
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/'
+            Method: get
+            RestApiId: !Ref FrontPageApi
+  ImgFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: api/target/lambda/sample_image_board_api/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleImageBoard Api Function'
+      Policies:
+        - AmazonS3FullAccess
+        - AmazonDynamoDBFullAccess
+      Environment:
+        Variables:
+          IMG_TABLE_NAME: !Ref ImgTableName
+          BUCKET_NAME: !Ref 'ImgBucket'
+          REGION: !Ref 'AWS::Region'
+      Events:
+        FrontPageApi:
+          Type: Api
+          Properties:
+            Path: '/api'
+            Method: post
+            RestApiId: !Ref FrontPageApi
+  ImgTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "img_id"
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: "img_id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 3
+      SSESpecification:
+        SSEEnabled: false
+      TableName: !Ref ImgTableName
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join ['', ['https://', !Ref FrontPageApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref FrontPageApiStageName, '/']]
