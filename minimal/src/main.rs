@@ -12,7 +12,7 @@ async fn function_handler(_event: Request) -> Result<impl IntoResponse, Error> {
     let resp = Response::builder()
         .status(200)
         .header("content-type", "text/html")
-        .body("Hello AWS Lambda HTTP request. Minimal function.")
+        .body("Hello AWS Lambda HTTP request. Minimal function.".to_string())
         .map_err(Box::new)?;
     Ok(resp)
 }
