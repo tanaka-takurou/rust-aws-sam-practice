@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Sample Image Converter Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'SampleImageConverterPage'
+  FrontPageApiStageName:
+    Type: String
+    Default: 'ProdStage'
+
+Resources:
+  FrontApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      EndpointConfiguration: REGIONAL
+      StageName: !Ref FrontPageApiStageName
+  ImgBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, HEAD]
+            AllowedOrigins: ['*']
+            Id: CORSRuleId2
+            MaxAge: '3600'
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: front/target/lambda/sample_image_converter_front/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleImageConverter Front Function'
+      Policies:
+        - Statement:
+            - Effect: 'Allow'
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource: '*'
+      Events:
+        FrontApi:
+          Type: Api
+          Properties:
+            Path: '/'
+            Method: get
+            RestApiId: !Ref FrontApi
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+          BUCKET_NAME: !Ref 'ImgBucket'
+          API_CHECK_PATH: !Join ['', ['/', !Ref 'FrontPageApiStageName', '/api_check']]
+          API_INIT_PATH: !Join ['', ['/', !Ref 'FrontPageApiStageName', '/api_init']]
+  InitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: api_init/target/lambda/sample_image_converter_api_init/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleImageConverter Api Init Function'
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ImgBucket
+        - Statement:
+            - Effect: 'Allow'
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource: '*'
+            - Effect: 'Allow'
+              Action:
+                - 'states:StartExecution'
+              Resource: '*'
+      Events:
+        FrontApi:
+          Type: Api
+          Properties:
+            Path: '/api_init'
+            Method: post
+            RestApiId: !Ref FrontApi
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+          BUCKET_NAME: !Ref 'ImgBucket'
+          STATE_MACHINE_ARN: !Ref MainStateMachine
+  CheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: api_check/target/lambda/sample_image_converter_api_check/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleImageConverter Api Check Function'
+      Policies:
+        - Statement:
+            - Effect: 'Allow'
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource: '*'
+            - Effect: 'Allow'
+              Action:
+                - 'states:ListExecutions'
+              Resource: '*'
+      Events:
+        FrontApi:
+          Type: Api
+          Properties:
+            Path: '/api_check'
+            Method: post
+            RestApiId: !Ref FrontApi
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+          STATE_MACHINE_ARN: !Ref MainStateMachine
+  StepFunctionsMain:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: step/target/lambda/sample_image_converter_step/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleImageConverter Step Function'
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ImgBucket
+        - Statement:
+            - Effect: 'Allow'
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource: '*'
+      Environment:
+        Variables:
+          REGION: !Ref AWS::Region
+          BUCKET_NAME: !Ref 'ImgBucket'
+  FrontApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref FrontPageFunction
+      Principal: apigateway.amazonaws.com
+  MainStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: step/statemachine.json
+      DefinitionSubstitutions:
+        LambdaFunction: !GetAtt StepFunctionsMain.Arn
+      Role: !GetAtt StatesExecutionRole.Arn
+  StatesExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource: "*"
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Value: !Join ['', ['https://', !Ref FrontApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'FrontPageApiStageName', '/']]

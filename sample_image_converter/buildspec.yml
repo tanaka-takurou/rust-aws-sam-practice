@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+  pre_build:
+    commands:
+      - echo Build prepare on `date`
+  build:
+    commands:
+      - echo Build started on `date`
+      - cd api_check
+      - cargo lambda build --release --arm64
+      - cd ../api_init
+      - cargo lambda build --release --arm64
+      - cd ../front
+      - cargo lambda build --release --arm64
+      - cd ../step
+      - cargo lambda build --release --arm64
+  post_build:
+    commands:
+      - echo Build completed on `date`
+artifacts:
+  files:
+    - api_check/target/lambda/sample_image_converter_api_check/bootstrap
+    - api_init/target/lambda/sample_image_converter_api_init/bootstrap
+    - front/target/lambda/sample_image_converter_front/bootstrap
+    - step/target/lambda/sample_image_converter_step/bootstrap

@@ -1,0 +1,108 @@
+{
+  "StartAt": "Convert jpg image",
+  "States": {
+    "Convert jpg image": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "convert",
+        "key.$": "$.key",
+        "type": "jpg"
+      },
+      "Next": "Convert png image"
+    },
+    "Convert png image": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "convert",
+        "key.$": "$.key",
+        "type": "png"
+      },
+      "Next": "Convert webp image"
+    },
+    "Convert webp image": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "convert",
+        "key.$": "$.key",
+        "type": "webp"
+      },
+      "Next": "Convert ico image"
+    },
+    "Convert ico image": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "convert",
+        "key.$": "$.key",
+        "type": "ico"
+      },
+      "Next": "Create medium icon"
+    },
+    "Create medium icon": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "icon",
+        "key.$": "$.key",
+        "icon": {
+          "diameter": "200"
+        }
+      },
+      "Next": "Create large icon"
+    },
+    "Create large icon": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "icon",
+        "key.$": "$.key",
+        "icon": {
+          "diameter": "300"
+        }
+      },
+      "Next": "Create medium thumbnail"
+    },
+    "Create medium thumbnail": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "thumbnail",
+        "key.$": "$.key",
+        "thumbnail": {
+          "width": "960",
+          "height": "540"
+        }
+      },
+      "Next": "Create large thumbnail"
+    },
+    "Create large thumbnail": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "thumbnail",
+        "key.$": "$.key",
+        "thumbnail": {
+          "width": "1440",
+          "height": "810"
+        }
+      },
+      "Next": "Create small thumbnail"
+    },
+    "Create small thumbnail": {
+      "Type": "Task",
+      "Resource": "${LambdaFunction}",
+      "Parameters": {
+        "action": "thumbnail",
+        "key.$": "$.key",
+        "thumbnail": {
+          "width": "480",
+          "height": "270"
+        }
+      },
+      "End": true
+    }
+  }
+}
