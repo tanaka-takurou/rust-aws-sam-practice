@@ -2,18 +2,36 @@ use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_s3::{Region, Client as S3Client};
 use aws_sdk_s3::types::ByteStream;
 use aws_sdk_s3::model::ObjectCannedAcl;
-use bytes::Buf;
 use image::{DynamicImage, imageops, ImageOutputFormat};
 use image_convert::{ImageResource, ICOConfig, JPGConfig, PNGConfig, WEBPConfig,
     to_ico, to_jpg, to_png, to_webp};
-use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response, Body};
-use serde::Serialize;
-use serde_json::Value;
+use lambda_runtime::{service_fn, Error, LambdaEvent};
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::io::Cursor;
 
-#[derive(Serialize, Debug)]
-struct ResponseData {
+#[derive(Deserialize)]
+struct IconParameter {
+    diameter: String,
+}
+
+#[derive(Deserialize)]
+struct ThumbnailParameter {
+    width:  String,
+    height: String,
+}
+
+#[derive(Deserialize)]
+struct Request {
+    action:    String,
+    key:       String,
+    extension: String,
+    icon:      IconParameter,
+    thumbnail: ThumbnailParameter,
+}
+
+#[derive(Serialize)]
+struct Response {
     key: String,
 }
 
@@ -21,7 +39,7 @@ fn convert_to_jpg(image_bytes: Vec<u8>) -> Vec<u8> {
     let mut config = JPGConfig::new();
     config.remain_profile = false;
 
-    let input = ImageResource::from_reader(image_bytes.reader()).unwrap();
+    let input = ImageResource::Data(image_bytes);
     let mut output = ImageResource::Data(Vec::new());
     to_jpg(&mut output, &input, &config).unwrap();
 
@@ -32,7 +50,7 @@ fn convert_to_png(image_bytes: Vec<u8>) -> Vec<u8> {
     let mut config = PNGConfig::new();
     config.remain_profile = false;
 
-    let input = ImageResource::from_reader(image_bytes.reader()).unwrap();
+    let input = ImageResource::Data(image_bytes);
     let mut output = ImageResource::Data(Vec::new());
     to_png(&mut output, &input, &config).unwrap();
 
@@ -43,7 +61,7 @@ fn convert_to_webp(image_bytes: Vec<u8>) -> Vec<u8> {
     let mut config = WEBPConfig::new();
     config.remain_profile = false;
 
-    let input = ImageResource::from_reader(image_bytes.reader()).unwrap();
+    let input = ImageResource::Data(image_bytes);
     let mut output = ImageResource::Data(Vec::new());
     to_webp(&mut output, &input, &config).unwrap();
 
@@ -55,7 +73,7 @@ fn convert_to_ico(image_bytes: Vec<u8>) -> Vec<u8> {
     config.remain_profile = false;
     config.size = vec![(16u16, 16u16)];
 
-    let input = ImageResource::from_reader(image_bytes.reader()).unwrap();
+    let input = ImageResource::Data(image_bytes);
     let mut output = ImageResource::Data(Vec::new());
     to_ico(&mut output, &input, &config).unwrap();
 
@@ -155,79 +173,64 @@ fn create_new_key(key: String, suffix: String, new_extension: String) -> String 
     return format!("{}_{}.{}", &key[..name_len], suffix, new_extension).to_string();
 }
 
-/// This is the main body for the function.
-/// Write your code inside it.
-/// There are some code example in the following URLs:
-/// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/lambda-http/examples
-async fn function_handler(event: Request) -> Result<impl IntoResponse, Error> {
-    let mut res_json = "{}".to_string();
-    let mut status = 500;
-    if let Body::Text(param_str) = event.body() {
-        let param: Value = serde_json::from_str(param_str).unwrap();
-        let key =  param["key"].to_string();
-        println!("key: {}", key.clone());
-        let image_bytes = get_image(key.clone()).await?;
+pub(crate) async fn my_handler(event: LambdaEvent<Request>) -> Result<Response, Error> {
+    let key = event.payload.key;
+    let image_bytes = get_image(key.clone()).await?;
 
-        match param["action"].to_string().as_str() {
-            "convert" => {
-                println!("convert");
-                match param["type"].to_string().as_str() {
-                    "jpg" => {
-                        let _ = upload_image(convert_to_jpg(image_bytes),
-                                create_new_key(key.clone(), param["action"].to_string(), param["type"].to_string()));
-                    },
-                    "png" => {
-                        let _ = upload_image(convert_to_png(image_bytes),
-                                create_new_key(key.clone(), param["action"].to_string(), param["type"].to_string()));
-                    },
-                    "webp" => {
-                        let _ = upload_image(convert_to_webp(image_bytes),
-                                create_new_key(key.clone(), param["action"].to_string(), param["type"].to_string()));
-                    },
-                    "ico" => {
-                        let _ = upload_image(convert_to_ico(image_bytes),
-                                create_new_key(key.clone(), param["action"].to_string(), param["type"].to_string()));
-                    },
-                    _ => {
-                        println!("Invalid type");
-                    },
-                };
-            },
-            "icon" => {
-                println!("icon");
-                let diameter: u32 = param["icon"]["diameter"].as_u64().unwrap() as u32;
-                let _ = upload_image(resize_for_icon(image_bytes, diameter),
-                    create_new_key(key.clone(), format!("{}_{}", param["action"],
-                                                param["icon"]["diameter"]).to_string(),
-                    "png".to_string()));
-            },
-            "thumbnail" => {
-                println!("thumbnail");
-                let width: u32 = param["thumbnail"]["width"].as_u64().unwrap() as u32;
-                let height: u32 = param["thumbnail"]["height"].as_u64().unwrap() as u32;
-                let _ = upload_image(resize_for_thumbnail(image_bytes, width, height),
-                        create_new_key(key.clone(), format!("{}_{}_{}", param["action"],
-                                            param["thumbnail"]["width"],
-                                            param["thumbnail"]["height"]).to_string(),
-                        "png".to_string()));
-            },
-            _ => {
-                println!("Invalid action");
-            },
-        };
+    match event.payload.action.as_str() {
+        "convert" => {
+            println!("convert");
+            match event.payload.extension.as_str() {
+                "jpg" => {
+                    let _ = upload_image(convert_to_jpg(image_bytes),
+                            create_new_key(key.clone(), event.payload.action, event.payload.extension)).await?;
+                },
+                "png" => {
+                    let _ = upload_image(convert_to_png(image_bytes),
+                            create_new_key(key.clone(), event.payload.action, event.payload.extension)).await?;
+                },
+                "webp" => {
+                    let _ = upload_image(convert_to_webp(image_bytes),
+                            create_new_key(key.clone(), event.payload.action, event.payload.extension)).await?;
+                },
+                "ico" => {
+                    let _ = upload_image(convert_to_ico(image_bytes),
+                            create_new_key(key.clone(), event.payload.action, event.payload.extension)).await?;
+                },
+                _ => {
+                    println!("Invalid type");
+                },
+            };
+        },
+        "icon" => {
+            println!("icon");
+            let diameter: u32 = event.payload.icon.diameter.parse().unwrap();
+            let _ = upload_image(resize_for_icon(image_bytes, diameter),
+                create_new_key(key.clone(), format!("{}_{}", event.payload.action,
+                                            event.payload.icon.diameter).to_string(),
+                "png".to_string())).await?;
+        },
+        "thumbnail" => {
+            println!("thumbnail");
+            let width: u32 = event.payload.thumbnail.width.parse().unwrap();
+            let height: u32 = event.payload.thumbnail.height.parse().unwrap();
+            let _ = upload_image(resize_for_thumbnail(image_bytes, width, height),
+                    create_new_key(key.clone(), format!("{}_{}_{}", event.payload.action,
+                                        event.payload.thumbnail.width,
+                                        event.payload.thumbnail.height).to_string(),
+                    "png".to_string())).await?;
+        },
+        _ => {
+            println!("Invalid action");
+        },
+    };
 
-        let res = ResponseData {
-            key: key.clone(),
-        };
-        res_json = serde_json::to_string(&res).unwrap();
-        status = 200;
-    }
+    // prepare the response
+    let resp = Response {
+        key: key.clone(),
+    };
 
-    let resp = Response::builder()
-        .status(status)
-        .header("content-type", "application/json")
-        .body(res_json)
-        .map_err(Box::new)?;
+    // return `Response` (it will be serialized to JSON automatically by the runtime)
     Ok(resp)
 }
 
@@ -239,5 +242,7 @@ async fn main() -> Result<(), Error> {
         .without_time()
         .init();
 
-    run(service_fn(function_handler)).await
+    let func = service_fn(my_handler);
+    lambda_runtime::run(func).await?;
+    Ok(())
 }

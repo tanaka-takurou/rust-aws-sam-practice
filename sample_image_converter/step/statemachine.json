@@ -7,7 +7,14 @@
       "Parameters": {
         "action": "convert",
         "key.$": "$.key",
-        "type": "jpg"
+        "extension": "jpg",
+        "icon": {
+          "diameter": "0"
+        },
+        "thumbnail": {
+          "width": "0",
+          "height": "0"
+        }
       },
       "Next": "Convert png image"
     },
@@ -17,7 +24,14 @@
       "Parameters": {
         "action": "convert",
         "key.$": "$.key",
-        "type": "png"
+        "extension": "png",
+        "icon": {
+          "diameter": "0"
+        },
+        "thumbnail": {
+          "width": "0",
+          "height": "0"
+        }
       },
       "Next": "Convert webp image"
     },
@@ -27,7 +41,14 @@
       "Parameters": {
         "action": "convert",
         "key.$": "$.key",
-        "type": "webp"
+        "extension": "webp",
+        "icon": {
+          "diameter": "0"
+        },
+        "thumbnail": {
+          "width": "0",
+          "height": "0"
+        }
       },
       "Next": "Convert ico image"
     },
@@ -37,7 +58,14 @@
       "Parameters": {
         "action": "convert",
         "key.$": "$.key",
-        "type": "ico"
+        "extension": "ico",
+        "icon": {
+          "diameter": "0"
+        },
+        "thumbnail": {
+          "width": "0",
+          "height": "0"
+        }
       },
       "Next": "Create medium icon"
     },
@@ -47,8 +75,13 @@
       "Parameters": {
         "action": "icon",
         "key.$": "$.key",
+        "extension": "",
         "icon": {
           "diameter": "200"
+        },
+        "thumbnail": {
+          "width": "0",
+          "height": "0"
         }
       },
       "Next": "Create large icon"
@@ -59,8 +92,13 @@
       "Parameters": {
         "action": "icon",
         "key.$": "$.key",
+        "extension": "",
         "icon": {
           "diameter": "300"
+        },
+        "thumbnail": {
+          "width": "0",
+          "height": "0"
         }
       },
       "Next": "Create medium thumbnail"
@@ -71,6 +109,10 @@
       "Parameters": {
         "action": "thumbnail",
         "key.$": "$.key",
+        "extension": "",
+        "icon": {
+          "diameter": "0"
+        },
         "thumbnail": {
           "width": "960",
           "height": "540"
@@ -84,6 +126,10 @@
       "Parameters": {
         "action": "thumbnail",
         "key.$": "$.key",
+        "extension": "",
+        "icon": {
+          "diameter": "0"
+        },
         "thumbnail": {
           "width": "1440",
           "height": "810"
@@ -97,6 +143,10 @@
       "Parameters": {
         "action": "thumbnail",
         "key.$": "$.key",
+        "extension": "",
+        "icon": {
+          "diameter": "0"
+        },
         "thumbnail": {
           "width": "480",
           "height": "270"

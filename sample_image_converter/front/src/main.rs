@@ -125,7 +125,7 @@ var CheckProgress = function() {
     $('#warning').text('ID is Empty').removeClass('hidden').addClass('visible');
     return false;
   }
-  var url = App.bucket + App.sid.substr(0, 4) + '-' + App.sid.substr(4, 2) + '-' + App.sid.substr(6, 2) + '-' + App.sid.substr(8, 2) + '-' + App.sid.substr(10, 2) + '/' + App.sid;
+  var url = App.bucket + App.sid.substr(0, 10) + '/' + App.sid;
   switch (App.progress){
   case 'convert_jpg':
     url += '_convert.jpg'
