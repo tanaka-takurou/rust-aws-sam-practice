@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: ServerlessApplicationRepository Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'ServerlessApplicationRepositoryPage'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ServerlessApplicationRepositoryPageApi
+      EndpointConfiguration: REGIONAL
+      StageName: Prod
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ServerlessApplicationRepositoryPageFunction
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: target/lambda/serverlessapplicationrepository/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'ServerlessApplicationRepository Function'
+      Policies: ReadOnlyAccess
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/'
+            Method: get
+            RestApiId: !Ref FrontPageApi
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join ['', ['https://', !Ref FrontPageApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', 'Prod/']]
