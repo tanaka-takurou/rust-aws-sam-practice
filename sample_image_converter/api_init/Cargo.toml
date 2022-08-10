@@ -15,6 +15,6 @@ tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
 base64 = "0.13.0"
 chrono = "0.4.19"
-aws-config = "0.46.0"
-aws-sdk-s3 = "0.16.0"
-aws-sdk-sfn = "0.16.0"
+aws-config = "0.47.0"
+aws-sdk-s3 = "0.17.0"
+aws-sdk-sfn = "0.17.0"
