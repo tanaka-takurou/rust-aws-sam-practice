@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SampleJsonResponse Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'SampleJsonResponsePage'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: SampleJsonResponsePageApi
+      EndpointConfiguration: REGIONAL
+      StageName: Prod
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: SampleJsonResponsePageFunction
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: target/lambda/sample_json_response/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleJsonResponse Function'
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/api/sample'
+            Method: post
+            RestApiId: !Ref FrontPageApi
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join ['', ['https://', !Ref FrontPageApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', 'Prod/']]
