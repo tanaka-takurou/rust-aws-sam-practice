@@ -27,7 +27,7 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<ApiGatewayProxyRe
     let mut map = HeaderMap::new();
     map.append(header::CONTENT_LENGTH, resp_json.to_string().parse().unwrap());
     map.append(header::CONTENT_TYPE, "application/json".parse().unwrap());
-    map.append(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
+    map.append(header::ACCESS_CONTROL_ALLOW_ORIGIN, "https://www.example.com".parse().unwrap());
     map.append(header::ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type".parse().unwrap());
     map.append(header::ACCESS_CONTROL_ALLOW_METHODS, "POST".parse().unwrap());
     Ok(
