@@ -1,0 +1,71 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SampleLogging Page
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'SampleLoggingPage'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: SampleLoggingPageApi
+      EndpointConfiguration: REGIONAL
+      StageName: Prod
+      AccessLogSetting:
+        DestinationArn: !GetAtt FrontLogGroup.Arn
+        Format: "{ 'requestId':'$context.requestId', 'ip': '$context.identity.sourceIp', 'caller':'$context.identity.caller', 'user':'$context.identity.user','requestTime':'$context.requestTime', 'xrayTraceId':'$context.xrayTraceId', 'wafResponseCode':'$context.wafResponseCode', 'httpMethod':'$context.httpMethod','resourcePath':'$context.resourcePath', 'status':'$context.status','protocol':'$context.protocol', 'responseLength':'$context.responseLength' }"
+      MethodSettings:
+        - MetricsEnabled: True
+          ResourcePath: '/*'
+          HttpMethod: '*'
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: SampleLoggingPageFunction
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: target/lambda/sample_logging/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleLogging Function'
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/api/sample'
+            Method: post
+            RestApiId: !Ref FrontPageApi
+  FrontLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 7
+  ApiCWLRoleArn:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt CloudWatchRole.Arn
+  CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Action: 'sts:AssumeRole'
+          Effect: Allow
+          Principal:
+            Service: apigateway.amazonaws.com
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join ['', ['https://', !Ref FrontPageApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', 'Prod/']]
