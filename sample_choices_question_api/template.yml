@@ -1,0 +1,49 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SampleChoicesQuestionApi
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: 'SampleChoicesQuestionApi'
+
+Resources:
+  FrontPageApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: SampleChoicesQuestionApi
+      EndpointConfiguration: REGIONAL
+      StageName: Prod
+      Cors:
+        AllowMethods: "'POST'"
+        AllowHeaders: "'Content-Type,Origin'"
+        AllowOrigin: "'https://www.example.com'"
+        MaxAge: "'600'"
+        AllowCredentials: true
+  FrontPageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: SampleChoicesQuestionFunction
+      Handler: bootstrap
+      Runtime: provided.al2
+      Timeout: 5
+      CodeUri: target/lambda/sample_choices_question_api/
+      MemorySize: 256
+      Architectures: ["arm64"]
+      Description: 'SampleChoicesQuestionApi Function'
+      Events:
+        testapi:
+          Type: Api
+          Properties:
+            Path: '/api'
+            Method: post
+            RestApiId: !Ref FrontPageApi
+
+Outputs:
+  FunctionName:
+    Value: !Ref FrontPageFunction
+    Description: Name of the Lambda function
+  APIURI:
+    Description: "URI"
+    Value: !Join ['', ['https://', !Ref FrontPageApi, '.execute-api.', !Ref 'AWS::Region', '.amazonaws.com/', 'Prod/']]
