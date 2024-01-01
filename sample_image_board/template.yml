@@ -30,6 +30,8 @@ Resources:
   FrontPageFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures:
+      - arm64
       Handler: bootstrap
       Runtime: provided.al2
       Timeout: 5
@@ -54,6 +56,8 @@ Resources:
   ImgFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures:
+      - arm64
       Handler: bootstrap
       Runtime: provided.al2
       Timeout: 5

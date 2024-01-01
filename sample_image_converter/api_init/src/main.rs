@@ -1,8 +1,9 @@
 use aws_config::meta::region::RegionProviderChain;
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response, Body};
-use aws_sdk_s3::{Region, Client as S3Client};
-use aws_sdk_s3::types::ByteStream;
-use aws_sdk_s3::model::ObjectCannedAcl;
+use aws_config::Region;
+use aws_sdk_s3::Client as S3Client;
+use aws_sdk_s3::primitives::ByteStream;
+use aws_sdk_s3::types::ObjectCannedAcl;
 use aws_sdk_sfn::Client as StepFunctionClient;
 use chrono::Utc;
 use serde::Serialize;

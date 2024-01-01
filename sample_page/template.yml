@@ -21,6 +21,8 @@ Resources:
   FrontPageFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures:
+      - arm64
       FunctionName: SamplePageFunction
       Handler: bootstrap
       Runtime: provided.al2

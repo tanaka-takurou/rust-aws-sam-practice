@@ -24,6 +24,8 @@ Resources:
   FrontPageFunction:
     Type: AWS::Serverless::Function
     Properties:
+      Architectures:
+      - arm64
       FunctionName: SampleChoicesQuestionFunction
       Handler: bootstrap
       Runtime: provided.al2

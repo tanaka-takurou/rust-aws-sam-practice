@@ -1,5 +1,5 @@
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
-use aws_sdk_dynamodb::{Client};
+use aws_sdk_dynamodb::Client;
 
 /// This is the main body for the function.
 /// Write your code inside it.

@@ -34,7 +34,7 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<ApiGatewayProxyRe
         ApiGatewayProxyResponse {
             status_code: 200,
             body: Some(resp_json.to_string().into()),
-            is_base64_encoded: None,
+            is_base64_encoded: false,
             headers: map,
             multi_value_headers: HeaderMap::new()
         }
