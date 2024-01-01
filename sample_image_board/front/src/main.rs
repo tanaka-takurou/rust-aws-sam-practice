@@ -1,7 +1,7 @@
 use aws_config::meta::region::RegionProviderChain;
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
-use aws_sdk_dynamodb::{Client, Region};
-use tokio_stream::StreamExt;
+use aws_config::Region;
+use aws_sdk_dynamodb::Client;
 use tera::{Context, Tera};
 use std::env;
 

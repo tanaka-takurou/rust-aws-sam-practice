@@ -1,6 +1,7 @@
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_apigateway::{Client, Region};
+use aws_config::Region;
+use aws_sdk_apigateway::Client;
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -14,7 +15,7 @@ async fn function_handler(_event: Request) -> Result<impl IntoResponse, Error> {
     let resp = client.get_rest_apis().send().await?;
 
     let mut api_names:Vec<String>=Vec::new();
-    for api in resp.items().unwrap_or_default() {
+    for api in resp.items() {
         api_names.push(api.name().unwrap_or_default().to_string());
     }
 

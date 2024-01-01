@@ -1,11 +1,11 @@
 use aws_config::meta::region::RegionProviderChain;
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response, Body};
-use aws_sdk_dynamodb::model::AttributeValue;
-use aws_sdk_dynamodb::{Region, Client as DynamodbClient};
+use aws_config::Region;
+use aws_sdk_dynamodb::types::AttributeValue;
+use aws_sdk_dynamodb::Client as DynamodbClient;
 use aws_sdk_s3::Client as S3Client;
-use aws_sdk_s3::types::ByteStream;
-use aws_sdk_s3::model::ObjectCannedAcl;
-use tokio_stream::StreamExt;
+use aws_sdk_s3::primitives::ByteStream;
+use aws_sdk_s3::types::ObjectCannedAcl;
 use chrono::Utc;
 use serde_json::Value;
 use base64::decode;

@@ -1,6 +1,7 @@
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_cognitoidentity::{Client, Region};
+use aws_config::Region;
+use aws_sdk_cognitoidentity::Client;
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -12,7 +13,7 @@ async fn function_handler(_event: Request) -> Result<impl IntoResponse, Error> {
     let shared_config = aws_config::from_env().region(region_provider).load().await;
     let client = Client::new(&shared_config);
     let resp = client.list_identity_pools().max_results(10).send().await?;
-    let pools = resp.identity_pools().unwrap_or_default();
+    let pools = resp.identity_pools();
 
     // Return something that implements IntoResponse.
     // It will be serialized to the right response event automatically by the runtime

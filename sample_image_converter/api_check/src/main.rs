@@ -1,6 +1,7 @@
 use aws_config::meta::region::RegionProviderChain;
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response, Body};
-use aws_sdk_sfn::{Region, Client, model::ExecutionStatus};
+use aws_config::Region;
+use aws_sdk_sfn::{Client, types::ExecutionStatus};
 use serde::Serialize;
 use serde_json::Value;
 use std::env;
@@ -36,8 +37,8 @@ async fn function_handler(event: Request) -> Result<impl IntoResponse, Error> {
                 .status_filter(ExecutionStatus::from(status))
                 .send()
                 .await?;
-            for execution in resp.executions().unwrap_or_default().into_iter() {
-                if execution.name().unwrap_or_default().to_string() == exe_name {
+            for execution in resp.executions().into_iter() {
+                if execution.name().to_string() == exe_name {
                     exe_status = status;
                     break;
                 }

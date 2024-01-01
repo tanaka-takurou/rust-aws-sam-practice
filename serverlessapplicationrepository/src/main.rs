@@ -1,6 +1,7 @@
 use lambda_http::{run, service_fn, Error, IntoResponse, Request, Response};
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_serverlessapplicationrepository::{Client, Region};
+use aws_config::Region;
+use aws_sdk_serverlessapplicationrepository::Client;
 
 /// This is the main body for the function.
 /// Write your code inside it.
